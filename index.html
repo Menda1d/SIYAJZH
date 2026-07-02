@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIYAJZH | OLFACTIVE ONLINE</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Premium, modern, luxury perfumes and architectural fragrances. Woven from raw memories.">
+    <!-- Tailwind CSS Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Alpine.js Core for State Management -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Google Fonts: Cormorant Garamond & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Inter:wght=200;300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7; /* Ivory Base */
+            color: #111111; /* Onyx */
+        }
+        .font-serif {
+            font-family: 'Cormorant Garamond', serif;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FDFBF7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #111111;
+        }
+    </style>
+</head>
+<body x-data="{ 
+    currentTab: 'home',
+    previousTabs: [],
+    isScrolled: false, 
+    cart: [],
+    wishlist: [],
+    searchQuery: '',
+    selectedProduct: null,
+    checkoutStep: 1,
+    couponApplied: false,
+    couponCode: '',
+    discount: 0,
+    lastAddedId: null,
+
+    // Toast manager
+    toastMessage: '',
+    toastTimeout: null,
+    triggerToast(msg) {
+        this.toastMessage = msg;
+        if (this.toastTimeout) clearTimeout(this.toastTimeout);
+        this.toastTimeout = setTimeout(() => { this.toastMessage = ''; }, 2000);
+    },
+    dismissToast() {
+        this.toastMessage = '';
+    },
+    
+    // Auth Matrix
+    accountMode: 'signup',
+    registeredUser: null,
+    authForm: { name: '', email: '', password: '', phone: '', address: '' },
+    loginForm: { email: '', password: '' },
+
+    checkoutForm: { name: '', email: '', address: '', phone: '' },
+    chatForm: { name: '', email: '', phone: '', message: '' },
+    isChatOpen: false,
+
+    // Admin Dashboard Management State
+    isEditing: false,
+    editingProductId: null,
+
+    // PERSISTENT PRODUCT DATABASE (Export Target)
+    products: [],
+
+    // COMPREHENSIVE USER DATABASE (Export Target)
+    registeredUsers: [],
+    
+    init() {
+        // --- 1. PRODUCT INITIALIZATION ---
+        const storedProducts = localStorage.getItem('siyajzh_products');
+        if (storedProducts) {
+            this.products = JSON.parse(storedProducts);
+        } else {
+            this.products = [
+                { id: 1, name: 'SILLAGE BLANC', concentration: 'Eau de Parfum (EDP)', price: 165000, family: 'Fresh', volume: '100ML', images: ['https://6a458d1f29e4cbc974f01623.imgix.net/sandbox/ASAD.jpg'], top: ['White Pepper', 'Aldehydes'], heart: ['Florentine Iris', 'Violet Leaf'], base: ['Silver Suede', 'White Musk'], sillage: 'Moderate sillage trail', longevity: '8-12h on skin', occasion: 'Daywear and structural events', description: 'A crisp, architectural vapor of aldehydes, cold iris, and silver suede mimicking raw silk on cold stone.', selectedQty: 1 },
+                { id: 2, name: 'CYBER OUD', concentration: 'Extrait de Parfum', price: 210000, family: 'Woody', volume: '100ML', images: ['https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600'], top: ['Pink Pepper', 'Saffron'], heart: ['Smoked Oud', 'Leather Accord'], base: ['Ambroxan', 'Patchouli'], sillage: 'Heavy signature trail', longevity: 'Eternal application', occasion: 'Night climate coordinates', description: 'A futuristic reinterpretation of traditional eastern notes subverted by sharp metallic sparks.', selectedQty: 1 },
+                { id: 3, name: 'AMBRE EPICEE', concentration: 'Eau de Parfum (EDP)', price: 150000, family: 'Amber / Oriental', volume: '100ML', images: ['https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&q=80&w=600'], top: ['Bergamot', 'Cardamom'], heart: ['Cinnamon Bark', 'Rose Absolute'], base: ['Golden Amber', 'Vanilla Bean'], sillage: 'Strong trajectory profile', longevity: '8-12h on skin', occasion: 'Cooler environments and evenings', description: 'A velvet, solar matrix composed of hot spices colliding against golden resinous warmth.', selectedQty: 1 }
+            ];
+            localStorage.setItem('siyajzh_products', JSON.stringify(this.products));
+        }
+
+        // --- 2. USER REGISTRY INITIALIZATION & 7-DAY EXPIRATION SWEEP ---
+        const storedUsers = localStorage.getItem('siyajzh_users');
+        if (storedUsers) {
+            let parsedUsers = JSON.parse(storedUsers);
+            const now = Date.now();
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            
+            // Clean out local un-exported users whose 7-day trial token has run out
+            this.registeredUsers = parsedUsers.filter(u => {
+                if (u.isHardcoded) return true; // Never expire committed data layers
+                return (now - u.createdAt) < sevenDays;
+            });
+            localStorage.setItem('siyajzh_users', JSON.stringify(this.registeredUsers));
+        } else {
+            this.registeredUsers = [
+                { name: 'DEMO ARCHIVE', email: 'user@example.com', password: 'password123', phone: '23470000000', address: 'SIYAJZH CORE SYSTEM HQ', isHardcoded: true, createdAt: Date.now() }
+            ];
+            localStorage.setItem('siyajzh_users', JSON.stringify(this.registeredUsers));
+        }
+
+        // --- 3. SESSION STATE AUTO-LOGIN CHECK ---
+        const activeSession = localStorage.getItem('siyajzh_active_session');
+        if (activeSession) {
+            const sessionData = JSON.parse(activeSession);
+            if ((Date.now() - sessionData.loginTime) < (7 * 24 * 60 * 60 * 1000)) {
+                this.registeredUser = sessionData.user;
+                this.accountMode = 'authenticated';
+            } else {
+                localStorage.removeItem('siyajzh_active_session');
+            }
+        }
+    },
+
+    saveProduct(newProduct) {
+        this.products.push(newProduct);
+        localStorage.setItem('siyajzh_products', JSON.stringify(this.products));
+    },
+
+    updateProduct(id, updatedFields) {
+        this.products = this.products.map(p => p.id === id ? { ...p, ...updatedFields } : p);
+        localStorage.setItem('siyajzh_products', JSON.stringify(this.products));
+    },
+
+    deleteProduct(id) {
+        if(confirm('Are you certain you want to remove this formula framework payload permanently?')) {
+            this.products = this.products.filter(p => p.id !== id);
+            localStorage.setItem('siyajzh_products', JSON.stringify(this.products));
+            this.triggerToast('Product deleted from active network.');
+        }
+    },
+
+    // Method to download the newly saved code file directly to your desktop with user arrays safely compiled
+    exportHtmlPage() {
+        // Explicitly set all currently present users to permanent code-layer status upon layout execution
+        let processedUsers = this.registeredUsers.map(u => ({ ...u, isHardcoded: true }));
+        this.registeredUsers = processedUsers;
+        localStorage.setItem('siyajzh_users', JSON.stringify(processedUsers));
+
+        let currentCode = document.documentElement.outerHTML;
+        
+        // Match and overwrite the hardcoded arrays inside the script section cleanly
+        const productRegex = /products:\s*\[[\s\S]*?\],/gm;
+        const freshProductString = `products: ${JSON.stringify(this.products, null, 16).replace(/\n\s*\]/, '\n            ]')},`;
+        
+        const userRegex = /registeredUsers:\s*\[[\s\S]*?\],/gm;
+        const freshUserString = `registeredUsers: ${JSON.stringify(this.registeredUsers, null, 16).replace(/\n\s*\]/, '\n            ]')},`;
+
+        let updatedCode = '<!DOCTYPE html>\n' + currentCode.replace(productRegex, freshProductString).replace(userRegex, freshUserString);
+
+        let blob = new Blob([updatedCode], { type: 'text/html' });
+        let a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'index.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        this.triggerToast('Exported index.html successfully! Commit this file to GitHub.');
+    },
+
+    get cartTotal() {
+        let total = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        return total - this.discount;
+    },
+    navigateTo(tab) {
+        if (this.currentTab !== tab) {
+            this.previousTabs.push(this.currentTab);
+            this.currentTab = tab;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            if (tab === 'checkout' && this.accountMode === 'authenticated' && this.registeredUser) {
+                this.checkoutForm.name = this.registeredUser.name;
+                this.checkoutForm.email = this.registeredUser.email;
+                this.checkoutForm.phone = this.registeredUser.phone;
+                this.checkoutForm.address = this.registeredUser.address;
+            }
+        }
+    },
+    navigateBack() {
+        if (this.previousTabs.length > 0) {
+            this.currentTab = this.previousTabs.pop();
+        } else {
+            this.currentTab = 'home';
+        }
+    },
+    addToCart(product, qty = 1) {
+        let found = this.cart.find(item => item.id === product.id);
+        if (found) { 
+            found.quantity += qty; 
+        } else { 
+            this.cart.push({ ...product, quantity: qty }); 
+        }
+        this.lastAddedId = product.id;
+    },
+    handleSignup() {
+        if(!this.authForm.email || !this.authForm.password || !this.authForm.phone || !this.authForm.address || !this.authForm.name) {
+            this.triggerToast('Please populate all registration matrices.');
+            return;
+        }
+
+        let emailLower = this.authForm.email.toLowerCase();
+        let emailExists = this.registeredUsers.some(u => u.email.toLowerCase() === emailLower);
+        if (emailExists) {
+            this.triggerToast('This email routing configuration is already registered.');
+            return;
+        }
+
+        // Build ephemeral profile container equipped with lifecycle monitoring variables
+        let newUserPayload = {
+            name: this.authForm.name.toUpperCase(),
+            email: emailLower,
+            password: this.authForm.password,
+            phone: this.authForm.phone,
+            address: this.authForm.address.toUpperCase(),
+            isHardcoded: false,
+            createdAt: Date.now()
+        };
+
+        // Push to working runtime cache
+        this.registeredUsers.push(newUserPayload);
+        localStorage.setItem('siyajzh_users', JSON.stringify(this.registeredUsers));
+
+        // Create persistent session state container configured to log them back in for up to 7 days
+        localStorage.setItem('siyajzh_active_session', JSON.stringify({
+            user: newUserPayload,
+            loginTime: Date.now()
+        }));
+
+        this.registeredUser = newUserPayload;
+        this.accountMode = 'authenticated';
+        this.triggerToast('Account profile mapped successfully.');
+        
+        // Reset inputs
+        this.authForm = { name: '', email: '', password: '', phone: '', address: '' };
+    },
+    handleLogin() {
+        let emailLower = this.loginForm.email.toLowerCase();
+        let matchedUser = this.registeredUsers.find(u => u.email.toLowerCase() === emailLower && u.password === this.loginForm.password);
+
+        if (matchedUser) {
+            this.registeredUser = matchedUser;
+            this.accountMode = 'authenticated';
+            
+            localStorage.setItem('siyajzh_active_session', JSON.stringify({
+                user: matchedUser,
+                loginTime: Date.now()
+            }));
+
+            this.triggerToast('Welcome back. Profile linked.');
+            this.loginForm = { email: '', password: '' };
+        } else {
+            this.triggerToast('Invalid system parameters provided.');
+        }
+    },
+    handleLogout() {
+        this.registeredUser = null;
+        this.accountMode = 'signup';
+        localStorage.removeItem('siyajzh_active_session');
+        this.triggerToast('Session state disconnected.');
+    },
+    sendWhatsAppInvoice() {
+        let itemString = this.cart.map(i => `${i.name} (${i.concentration} - ${i.volume || '100ML'}) x${i.quantity} - ₦${(i.price * i.quantity).toLocaleString()}`).join('\n');
+        let rawMessage = `*SIYAJZH - NEW ORDER INVOICE*\n\n` +
+                         `*Customer Information:*\n` +
+                         `Name: ${this.checkoutForm.name}\n` +
+                         `Email: ${this.checkoutForm.email}\n` +
+                         `Phone: ${this.checkoutForm.phone}\n` +
+                         `Delivery: ${this.checkoutForm.address}\n\n` +
+                         `*Items to Purchase:*\n${itemString}\n\n` +
+                         `*Total Amount Payable:* ₦${this.cartTotal.toLocaleString()} NGN`;
+        
+        let encodedMessage = encodeURIComponent(rawMessage);
+        window.open(`https://wa.me/2347062022875?text=${encodedMessage}`, '_blank');
+    },
+    initiateWhatsAppChat() {
+        if(!this.chatForm.name || !this.chatForm.email || !this.chatForm.phone) {
+            this.triggerToast('Please complete all required fields.');
+            return;
+        }
+        let optionalMessage = this.chatForm.message ? `\n*Message:* ${this.chatForm.message}` : '';
+        let rawMessage = `*SIYAJZH - CONCIERGE INQUIRY*\n\n` +
+                         `*Client Parameters:*\n` +
+                         `Name: ${this.chatForm.name}\n` +
+                         `Email: ${this.chatForm.email}\n` +
+                         `Phone: ${this.chatForm.phone}${optionalMessage}\n\n` +
+                         `Hello, I would like to initiate an olfactive consultation request.`;
+        
+        let encodedMessage = encodeURIComponent(rawMessage);
+        window.open(`https://wa.me/2347062022875?text=${encodedMessage}`, '_blank');
+        this.isChatOpen = false;
+        this.chatForm = { name: '', email: '', phone: '', message: '' };
+    }
+}" 
+@scroll.window="isScrolled = (window.scrollY > 50)" 
+@click="dismissToast()"
+class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-between relative">
+
+    <!-- GLOBAL POPUP TOAST -->
+    <div x-show="toastMessage" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         @click.stop
+         class="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-neutral-950 text-white text-[10px] uppercase tracking-[0.2em] px-6 py-3 border border-white/10 shadow-2xl rounded-full"
+         style="display: none;"
+         x-text="toastMessage">
+    </div>
+
+    <!-- FLOATING ACTION BACK BUTTON -->
+    <div class="fixed bottom-8 left-8 z-50 transition-all duration-300">
+        <button x-show="currentTab !== 'home'" @click="navigateBack()" 
+                class="flex items-center justify-center gap-2 px-4 py-3 bg-neutral-950 text-white rounded-full shadow-xl hover:bg-neutral-800 transition-all duration-300 group cursor-pointer border border-white/10"
+                style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 transform group-hover:-translate-x-0.5 transition-transform">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            <span class="text-[10px] uppercase tracking-[0.2em] font-medium pr-1">Back</span>
+        </button>
+    </div>
+
+    <!-- FLOATING ACTION CHAT WIDGET -->
+    <div class="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-4" @click.stop>
+        <div x-show="isChatOpen" x-transition 
+             class="w-72 sm:w-80 bg-white border border-neutral-200 shadow-2xl p-6 rounded-2xl flex flex-col space-y-4" 
+             style="display: none;" @click.away="isChatOpen = false">
+            <div class="border-b border-neutral-100 pb-3 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xs font-semibold tracking-widest text-neutral-900 uppercase">Concierge Chat</h3>
+                    <p class="text-[9px] text-neutral-400 uppercase tracking-wider mt-0.5">Olfactive Support Network</p>
+                </div>
+                <button @click="isChatOpen = false" class="text-neutral-400 hover:text-neutral-900 text-xs cursor-pointer">✕</button>
+            </div>
+            
+            <div class="space-y-3">
+                <input type="text" x-model="chatForm.name" placeholder="YOUR FULL NAME" class="w-full p-2.5 text-[10px] bg-neutral-50 border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
+                <input type="email" x-model="chatForm.email" placeholder="EMAIL ADDRESS" class="w-full p-2.5 text-[10px] bg-neutral-50 border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
+                <input type="tel" x-model="chatForm.phone" placeholder="PHONE / WHATSAPP NUMBER" class="w-full p-2.5 text-[10px] bg-neutral-50 border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
+                <textarea x-model="chatForm.message" placeholder="HOW CAN WE ASSIST YOU? (OPTIONAL)" rows="2" class="w-full p-2.5 text-[10px] bg-neutral-50 border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest resize-none"></textarea>
+            </div>
+
+            <button @click="initiateWhatsAppChat()" class="w-full py-2.5 bg-neutral-950 text-white text-[9px] uppercase tracking-widest font-medium hover:bg-neutral-800 transition-colors cursor-pointer text-center">
+                Securely Connect to WhatsApp
+            </button>
+        </div>
+
+        <button @click="isChatOpen = !isChatOpen" 
+                class="flex items-center justify-center gap-2 px-5 py-3 bg-neutral-950 text-white rounded-full shadow-xl hover:bg-neutral-800 transition-all duration-300 cursor-pointer border border-white/10 group">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 transform group-hover:rotate-12 transition-transform">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+            </svg>
+            <span class="text-[10px] uppercase tracking-[0.2em] font-medium pr-0.5">Chat with us</span>
+        </button>
+    </div>
+
+    <!-- GLOBAL HEADER -->
+    <header :class="isScrolled || currentTab !== 'home' ? 'bg-white/90 backdrop-blur-md border-b border-neutral-100 py-4' : 'bg-transparent py-6'" class="fixed top-0 left-0 w-full z-40 transition-all duration-500 ease-in-out">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
+            
+            <nav class="hidden md:flex space-x-6 text-[10px] uppercase tracking-[0.2em] font-light pl-4">
+                <button @click="navigateTo('shop')" class="hover:text-neutral-500 transition-colors cursor-pointer">Shop</button>
+                <button @click="navigateTo('about')" class="hover:text-neutral-500 transition-colors cursor-pointer">About</button>
+                <button @click="navigateTo('admin')" class="text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer border-l pl-4 border-neutral-200">Portal</button>
+            </nav>
+
+            <div class="text-center cursor-pointer mx-auto md:mx-0" @click="navigateTo('home')">
+                <h1 class="text-lg md:text-2xl font-light tracking-[0.5em] text-neutral-900">S I Y A J Z H</h1>
+                <p class="text-[8px] tracking-[0.6em] text-neutral-400 uppercase mt-0.5">Olfactive Online</p>
+            </div>
+
+            <div class="flex items-center space-x-6 text-[10px] uppercase tracking-[0.15em] font-light">
+                <button @click="navigateTo('account')" class="hover:text-neutral-500 transition-colors cursor-pointer flex items-center gap-1">
+                    <span x-text="accountMode === 'authenticated' ? 'Profile' : 'Account'"></span>
+                </button>
+                <button @click="navigateTo('cart')" class="relative font-medium hover:text-neutral-500 transition-colors cursor-pointer flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                    </svg>
+                    Cart (<span x-text="cart.reduce((a, b) => a + b.quantity, 0)"></span>)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENT SPACE -->
+    <main class="flex-grow pt-0">
+
+        <!-- TAB: HOMEPAGE -->
+        <template x-if="currentTab === 'home'">
+            <div>
+                <section class="relative h-screen flex items-center justify-center bg-neutral-900 overflow-hidden">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-65 mix-blend-multiply scale-105" style="background-image: url('https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=1920');"></div>
+                    <div class="relative text-center text-white px-4 max-w-3xl z-10">
+                        <span class="text-[10px] uppercase tracking-[0.4em] text-neutral-300 mb-4 block">The Permanent Architecture</span>
+                        <h2 class="text-4xl md:text-6xl font-serif font-light tracking-wide mb-8 leading-tight">Invisible garments woven from raw memory.</h2>
+                        <div class="flex justify-center gap-4">
+                            <button @click="navigateTo('shop')" class="px-8 py-3 bg-white text-neutral-950 text-[10px] tracking-widest uppercase hover:bg-neutral-100 transition-all cursor-pointer">Shop Now</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="max-w-7xl mx-auto px-6 py-24">
+                    <div class="flex items-baseline justify-between mb-12 border-b border-neutral-200 pb-4">
+                        <h3 class="text-xl font-serif tracking-wide font-light">The Olfactive Core</h3>
+                        <button @click="navigateTo('shop')" class="text-[10px] uppercase tracking-widest border-b border-neutral-900 pb-0.5 cursor-pointer">View All</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <template x-for="product in products" :key="product.id">
+                            <div class="group cursor-pointer" @click="selectedProduct = product; navigateTo('product')">
+                                <div class="bg-neutral-50 aspect-[4/5] overflow-hidden flex items-center justify-center p-8 border border-neutral-100 relative">
+                                    <img :src="product.images ? product.images[0] : product.image" :alt="product.name" class="max-h-full object-contain mix-blend-multiply transition-transform duration-700 group-hover:scale-105">
+                                </div>
+                                <div class="mt-4 flex justify-between items-start text-xs tracking-wider">
+                                    <div>
+                                        <h4 class="font-medium text-neutral-950" x-text="product.name"></h4>
+                                        <p class="text-neutral-400 text-[10px]" x-text="product.concentration + ' • ' + (product.volume || '100ML')"></p>
+                                    </div>
+                                    <span class="font-light text-neutral-600" x-text="'₦' + product.price.toLocaleString()"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+            </div>
+        </template>
+
+        <!-- TAB: SHOP COMPREHENSIVE -->
+        <template x-if="currentTab === 'shop'">
+            <section class="max-w-7xl mx-auto px-6 py-32">
+                <h2 class="text-2xl font-serif font-light tracking-wide mb-12 border-b border-neutral-100 pb-4">The Fragrance Framework</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div class="space-y-8 text-[11px] uppercase tracking-wider">
+                        <div>
+                            <h4 class="font-medium text-neutral-400 mb-3">Families</h4>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-neutral-900"> Woody Accord</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-neutral-900"> Fresh Crystalline</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-neutral-900"> Amber Matrix</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:grid-cols-3 grid grid-cols-1 md:grid-cols-2 lg:col-span-3 gap-8">
+                        <template x-for="product in products" :key="product.id">
+                            <div @click="selectedProduct = product; navigateTo('product')" class="group border border-neutral-100 p-4 bg-white/50 flex flex-col justify-between cursor-pointer">
+                                <div>
+                                    <div class="bg-neutral-50 aspect-square flex items-center justify-center p-6 mb-4 overflow-hidden">
+                                        <img :src="product.images ? product.images[0] : product.image" class="max-h-full object-contain mix-blend-multiply group-hover:scale-102 transition-transform duration-500">
+                                    </div>
+                                    <div class="flex justify-between items-baseline mb-1">
+                                        <h3 class="text-xs font-medium tracking-widest" x-text="product.name"></h3>
+                                        <span class="text-xs font-light text-neutral-500" x-text="'₦' + product.price.toLocaleString()"></span>
+                                    </div>
+                                    <p class="text-[10px] text-neutral-400 uppercase tracking-widest mb-4" x-text="product.concentration + ' • ' + (product.volume || '100ML')"></p>
+                                </div>
+
+                                <div class="mt-auto pt-2 border-t border-neutral-100 flex flex-col gap-2" @click.stop>
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex items-center border border-neutral-200 text-xs bg-white">
+                                            <button @click="if(product.selectedQty > 1) product.selectedQty--" class="px-2.5 py-1.5 hover:bg-neutral-50 cursor-pointer text-neutral-500">—</button>
+                                            <span class="px-2 font-medium min-w-[20px] text-center text-[11px]" x-text="product.selectedQty"></span>
+                                            <button @click="product.selectedQty++" class="px-2.5 py-1.5 hover:bg-neutral-50 cursor-pointer text-neutral-500">+</button>
+                                        </div>
+                                        <button @click="addToCart(product, product.selectedQty); triggerToast('Formulation added to system inventory.'); product.selectedQty = 1;" class="flex-grow py-1.5 bg-neutral-950 text-white text-[9px] uppercase tracking-widest font-medium hover:bg-neutral-800 transition-colors cursor-pointer text-center">
+                                            Add to Cart
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </section>
+        </template>
+
+        <!-- TAB: DETAILED PRODUCT MATRIX -->
+        <template x-if="currentTab === 'product' && selectedProduct">
+            <section class="max-w-7xl mx-auto px-6 py-32 grid grid-cols-1 lg:grid-cols-2 gap-16"
+                     x-data="{ activeIndex: 0 }">
+                
+                <div class="relative bg-neutral-50 aspect-[4/5] border border-neutral-100 flex flex-col justify-between p-6">
+                    <div class="flex-grow flex items-center justify-center overflow-hidden">
+                        <img :src="selectedProduct.images ? selectedProduct.images[activeIndex] : selectedProduct.image" class="max-h-full object-contain mix-blend-multiply">
+                    </div>
+                </div>
+
+                <div class="flex flex-col justify-center">
+                    <span class="text-[10px] uppercase tracking-widest text-neutral-400 mb-1" x-text="selectedProduct.concentration + ' • ' + (selectedProduct.volume || '100ML')"></span>
+                    <h2 class="text-3xl font-serif font-light mb-2 tracking-wide" x-text="selectedProduct.name"></h2>
+                    <p class="text-lg font-light text-neutral-700 mb-4" x-text="'₦' + selectedProduct.price.toLocaleString() + ' NGN'"></p>
+                    <p class="text-xs text-neutral-500 leading-relaxed font-light mb-6" x-text="selectedProduct.description"></p>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center gap-4">
+                            <button @click="addToCart(selectedProduct, 1); triggerToast('Formulation added to system inventory.');" class="flex-grow py-4 bg-neutral-950 text-white text-[10px] uppercase tracking-widest hover:bg-neutral-800 transition-colors cursor-pointer">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </template>
+
+        <!-- TAB: SHOPPING CART -->
+        <template x-if="currentTab === 'cart'">
+            <section class="max-w-4xl mx-auto px-6 py-32">
+                <div class="flex flex-row justify-between items-baseline mb-8 border-b border-neutral-100 pb-4">
+                    <h2 class="text-2xl font-serif font-light tracking-wide">Selected Inventory</h2>
+                </div>
+                
+                <template x-if="cart.length === 0">
+                    <div class="text-center py-16 text-neutral-400 text-xs uppercase tracking-widest">Your dynamic archive is empty.</div>
+                </template>
+
+                <template x-if="cart.length > 0">
+                    <div class="space-y-6">
+                        <template x-for="item in cart" :key="item.id">
+                            <div class="flex items-center justify-between border-b border-neutral-100 pb-4 text-xs">
+                                <div class="flex items-center gap-4">
+                                    <div>
+                                        <h4 class="font-medium uppercase tracking-wider" x-text="item.name"></h4>
+                                        <p class="text-neutral-400 text-[10px]" x-text="'₦' + item.price.toLocaleString()"></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-6">
+                                    <span class="px-3" x-text="'Qty: ' + item.quantity"></span>
+                                    <button @click="cart = cart.filter(c => c.id !== item.id)" class="text-neutral-400 hover:text-neutral-900 cursor-pointer">Remove</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="pt-6 text-xs space-y-2 max-w-sm ml-auto">
+                            <div class="flex justify-between font-medium text-sm pt-2 border-t border-neutral-200">
+                                <span>Final Order Capital</span>
+                                <span x-text="'₦' + cartTotal.toLocaleString()"></span>
+                            </div>
+                            <button @click="navigateTo('checkout')" class="w-full mt-4 bg-neutral-950 text-white text-center py-3 text-[10px] uppercase tracking-widest font-medium hover:bg-neutral-800 cursor-pointer">
+                                Proceed to Checkout
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </section>
+        </template>
+
+        <!-- TAB: MULTI-STEP CHECKOUT ESCROW -->
+        <template x-if="currentTab === 'checkout'">
+            <section class="max-w-2xl mx-auto px-6 py-32" @click.stop>
+                <h2 class="text-xl font-serif tracking-wide font-light mb-8 text-center uppercase">Secure Checkout Process</h2>
+                
+                <div x-show="checkoutStep === 1" class="space-y-4">
+                    <input type="text" x-model="checkoutForm.name" placeholder="RECIPIENT FULL NAME" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
+                    <input type="email" x-model="checkoutForm.email" placeholder="SECURE EMAIL CONTACT" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
+                    <input type="text" x-model="checkoutForm.phone" placeholder="PHONE NUMBER" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
+                    <input type="text" x-model="checkoutForm.address" placeholder="DESTINATION LOGISTICS ADDRESS" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
+                    <button @click="checkoutStep = 2" class="w-full py-3 bg-neutral-900 text-white text-[10px] uppercase tracking-widest font-medium cursor-pointer">NEXT</button>
+                </div>
+
+                <div x-show="checkoutStep === 2" class="space-y-6">
+                    <div class="p-4 bg-neutral-900 text-white flex justify-between items-center text-xs uppercase tracking-widest">
+                        <span>Total Payable Capital:</span>
+                        <span class="text-base font-bold text-white" x-text="'₦' + cartTotal.toLocaleString() + ' NGN'"></span>
+                    </div>
+                    <button @click="sendWhatsAppInvoice()" class="w-full py-4 bg-emerald-800 text-white text-[10px] uppercase tracking-widest font-medium hover:bg-emerald-900 cursor-pointer text-center block">
+                        Confirm to WhatsApp Invoice
+                    </button>
+                </div>
+            </section>
+        </template>
+
+        <!-- TAB: ACCOUNT ARCHIVE (HYBRID ACTIVE SYSTEM) -->
+        <template x-if="currentTab === 'account'">
+            <section class="max-w-md mx-auto px-6 py-32 space-y-8 text-xs uppercase tracking-widest" @click.stop>
+                
+                <!-- SIGNUP SUB-MATRIX -->
+                <div x-show="accountMode === 'signup'" class="space-y-6">
+                    <div class="text-center">
+                        <h2 class="text-xl font-serif font-light tracking-wide mb-1">Create Account Profile</h2>
+                        <p class="text-[9px] text-neutral-400 normal-case tracking-normal mt-1">Logs you in automatically on this browser for 7 days until master admin sync.</p>
+                    </div>
+                    <div class="space-y-3">
+                        <input type="text" x-model="authForm.name" placeholder="FULL NAME" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                        <input type="email" x-model="authForm.email" placeholder="EMAIL ADDRESS" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                        <input type="password" x-model="authForm.password" placeholder="SECURE PASSWORD" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs">
+                        <input type="text" x-model="authForm.phone" placeholder="PHONE NUMBER" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                        <input type="text" x-model="authForm.address" placeholder="SHIPPING ADDRESS" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                    </div>
+                    <button @click="handleSignup()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Register Profile Matrix</button>
+                    <p class="text-center text-[9px] text-neutral-400">Already registered? <span @click="accountMode = 'login'" class="text-neutral-900 cursor-pointer underline">Log In</span></p>
+                </div>
+
+                <!-- LOGIN SUB-MATRIX -->
+                <div x-show="accountMode === 'login'" class="space-y-6">
+                    <div class="text-center">
+                        <h2 class="text-xl font-serif font-light tracking-wide mb-1">Authenticate Credentials</h2>
+                    </div>
+                    <div class="space-y-3">
+                        <input type="email" x-model="loginForm.email" placeholder="EMAIL ADDRESS" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                        <input type="password" x-model="loginForm.password" placeholder="PASSWORD" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs">
+                    </div>
+                    <button @click="handleLogin()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Access Profile Node</button>
+                    <p class="text-center text-[9px] text-neutral-400">Need an account? <span @click="accountMode = 'signup'" class="text-neutral-900 cursor-pointer underline">Register</span></p>
+                </div>
+
+                <!-- LOGGED IN SUITE -->
+                <div x-show="accountMode === 'authenticated'" class="space-y-6">
+                    <div class="border border-neutral-200 p-6 bg-white space-y-4">
+                        <h3 class="font-serif text-sm border-b pb-2 tracking-widest">Active Client Matrix</h3>
+                        <div class="space-y-2 text-[10px] text-left">
+                            <p class="text-neutral-500">NAME: <span class="text-neutral-900 font-medium" x-text="registeredUser ? registeredUser.name : ''"></span></p>
+                            <p class="text-neutral-500">EMAIL: <span class="text-neutral-900 font-medium" x-text="registeredUser ? registeredUser.email : ''"></span></p>
+                            <p class="text-neutral-500">SHIPPING VECTOR: <span class="text-neutral-900 font-medium" x-text="registeredUser ? registeredUser.address : ''"></span></p>
+                            <p class="text-neutral-500 mt-4 text-[9px] border-t pt-2 text-neutral-400 normal-case italic" x-text="registeredUser && registeredUser.isHardcoded ? '✓ Identity node permanently compiled into core system network layer.' : '⚠ Ephemeral security token. System admin verification pending sync.'"></p>
+                        </div>
+                    </div>
+                    <button @click="handleLogout()" class="w-full py-2 border border-neutral-300 text-neutral-600 text-[9px] tracking-widest uppercase hover:bg-neutral-50 cursor-pointer">Disconnect Session Profile</button>
+                </div>
+
+            </section>
+        </template>
+
+        <!-- TAB: ADMIN CONTROL INFRASTRUCTURE -->
+        <template x-if="currentTab === 'admin'">
+            <section class="max-w-5xl mx-auto px-6 py-32" @click.stop x-data="{ 
+                adminAuthenticated: false,
+                adminEmail: '',
+                adminPassword: '',
+                handleAdminLogin() {
+                    if (this.adminEmail.toLowerCase() === 'admin@siyajzh.com' && this.adminPassword === '123456') {
+                        this.adminAuthenticated = true;
+                        triggerToast('Super User Node Access Authorized.');
+                    } else {
+                        triggerToast('Invalid system parameters mapped.');
+                    }
+                }
+            }">
+                <!-- Login Guard Node -->
+                <div x-show="!adminAuthenticated" class="max-w-md mx-auto space-y-6 text-xs uppercase tracking-widest py-12">
+                    <div class="text-center">
+                        <h2 class="text-xl font-serif font-light tracking-wide mb-1">Admin Core Infrastructure</h2>
+                    </div>
+                    <div class="space-y-3">
+                        <input type="email" x-model="adminEmail" placeholder="ADMIN EMAIL ROUTE" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                        <input type="password" x-model="adminPassword" placeholder="ADMIN PRIVACY KEY" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs">
+                    </div>
+                    <button @click="handleAdminLogin()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Access Node Framework</button>
+                </div>
+
+                <!-- Live Management Matrix Suite -->
+                <div x-show="adminAuthenticated" class="space-y-12">
+                    <div class="flex items-center justify-between mb-2 border-b border-neutral-200 pb-4">
+                        <h2 class="text-xl font-serif tracking-wide font-light uppercase">SIYAJZH CORE MANAGEMENT CONSOLE</h2>
+                        <div class="flex gap-4">
+                            <button @click="exportHtmlPage()" class="text-[9px] bg-emerald-800 text-white px-4 py-2 hover:bg-emerald-900 uppercase tracking-widest cursor-pointer font-medium">Save &amp; Export Page (Bakes Users + Products)</button>
+                        </div>
+                    </div>
+
+                    <!-- USER REGISTRY LOGS BLOCK -->
+                    <div class="bg-white border border-neutral-200 p-6 text-left">
+                        <h3 class="text-xs font-medium tracking-widest mb-4 uppercase text-neutral-400">Registered Users Matrix Registry</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-[11px] border-collapse tracking-wider">
+                                <thead>
+                                    <tr class="border-b border-neutral-200 text-neutral-400 text-[9px] uppercase">
+                                        <th class="py-2 px-1">Client Name</th>
+                                        <th class="py-2 px-1">Email Coordinates</th>
+                                        <th class="py-2 px-1">Password Metric</th>
+                                        <th class="py-2 px-1">Network Layer Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="usr in registeredUsers" :key="usr.email">
+                                        <tr class="border-b border-neutral-100 hover:bg-neutral-50 text-[10px]">
+                                            <td class="py-2 px-1 font-medium text-neutral-950" x-text="usr.name"></td>
+                                            <td class="py-2 px-1 text-neutral-600" x-text="usr.email"></td>
+                                            <td class="py-2 px-1 font-mono text-neutral-400" x-text="usr.password"></td>
+                                            <td class="py-2 px-1">
+                                                <span :class="usr.isHardcoded ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'" 
+                                                      class="px-2 py-0.5 border text-[8px] tracking-widest font-medium uppercase rounded"
+                                                      x-text="usr.isHardcoded ? 'Committed Framework' : '7-Day Ephemeral'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Input / Configuration Form for Products -->
+                    <div class="bg-white border border-neutral-200 p-6">
+                        <h3 class="text-xs font-medium tracking-widest mb-6 uppercase text-neutral-400" x-text="isEditing ? 'Modify Selection Vector Parameters' : 'Inject Fragrance Formulation Vector'"></h3>
+                        
+                        <form id="adminProductForm" @submit.prevent="
+                            let imageFiles = $el.elements.pimages.files;
+                            
+                            const compilePayload = (urlsArray) => {
+                                let payload = {
+                                    name: $el.elements.pname.value.toUpperCase(),
+                                    concentration: $el.elements.pconc.value,
+                                    price: parseFloat($el.elements.pprice.value) || 150000,
+                                    family: $el.elements.pfamily.value,
+                                    volume: $el.elements.pvol.value,
+                                    top: $el.elements.ptop.value.split(',').map(s => s.trim()),
+                                    heart: $el.elements.pheart.value.split(',').map(s => s.trim()),
+                                    base: $el.elements.pbase.value.split(',').map(s => s.trim()),
+                                    longevity: $el.elements.plong.value,
+                                    sillage: $el.elements.pproj.value,
+                                    occasion: $el.elements.pocc.value,
+                                    description: $el.elements.pdesc.value || 'Custom architectural payload injection.',
+                                    selectedQty: 1
+                                };
+                                
+                                if(urlsArray.length > 0) payload.images = urlsArray;
+
+                                if(isEditing) {
+                                    updateProduct(editingProductId, payload);
+                                    isEditing = false;
+                                    editingProductId = null;
+                                } else {
+                                    payload.id = Date.now();
+                                    if(!payload.images) payload.images = ['https://6a458d1f29e4cbc974f01623.imgix.net/sandbox/ASAD.jpg'];
+                                    saveProduct(payload);
+                                }
+                                triggerToast('Database synced.');
+                                $el.reset();
+                            };
+
+                            if (imageFiles.length > 0) {
+                                let reader = new FileReader();
+                                reader.onload = (e) => { compilePayload([e.target.result]); };
+                                reader.readAsDataURL(imageFiles[0]);
+                            } else {
+                                compilePayload([]);
+                            }
+                        " class="space-y-6 text-xs text-left">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Fragrance Label</label>
+                                    <input type="text" name="pname" placeholder="SILLAGE BLANC" required class="border border-neutral-200 p-3 text-[10px] bg-neutral-50/50 uppercase">
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Concentration Matrix</label>
+                                    <select name="pconc" class="border border-neutral-200 p-3 text-[10px] bg-white">
+                                        <option selected>Eau de Parfum (EDP)</option>
+                                        <option>Extrait de Parfum</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Market Capitalization (₦)</label>
+                                    <input type="number" name="pprice" placeholder="150000" required class="border border-neutral-200 p-3 text-[10px] bg-neutral-50/50">
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Volume Framework</label>
+                                    <select name="pvol" class="border border-neutral-200 p-3 text-[10px] bg-white">
+                                        <option selected>100ML</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Fragrance Family / Accord</label>
+                                    <input type="text" name="pfamily" placeholder="Woody" required class="border border-neutral-200 p-3 text-[10px] bg-neutral-50/50 uppercase">
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Olfactive Imagery Matrix</label>
+                                    <input type="file" name="pimages" accept="image/*" class="border border-neutral-200 p-2 text-[10px] bg-white cursor-pointer">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-b border-neutral-100 py-4">
+                                <input type="text" name="ptop" placeholder="Top notes (comma separated)" required class="border border-neutral-200 p-3 text-[10px]">
+                                <input type="text" name="pheart" placeholder="Heart notes" required class="border border-neutral-200 p-3 text-[10px]">
+                                <input type="text" name="pbase" placeholder="Base notes" required class="border border-neutral-200 p-3 text-[10px]">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <input type="text" name="plong" placeholder="Longevity Index" required class="border border-neutral-200 p-3 text-[10px]">
+                                <input type="text" name="pproj" placeholder="Sillage" required class="border border-neutral-200 p-3 text-[10px]">
+                                <input type="text" name="pocc" placeholder="Occasion Profile" required class="border border-neutral-200 p-3 text-[10px]">
+                            </div>
+
+                            <textarea name="pdesc" placeholder="Provide description..." rows="3" class="w-full border border-neutral-200 p-3 text-[10px] bg-neutral-50/50 uppercase resize-none"></textarea>
+
+                            <button type="submit" class="w-full py-4 bg-neutral-950 text-white text-[10px] uppercase tracking-widest font-medium hover:bg-neutral-800 transition-colors cursor-pointer text-center" x-text="isEditing ? 'Apply Structural Matrix Updates' : 'Compile Framework Payload Into Main Catalog Vector'"></button>
+                        </form>
+                    </div>
+
+                    <!-- Products Manifest Table Grid Layout -->
+                    <div class="bg-white border border-neutral-200 p-6 overflow-hidden">
+                        <h3 class="text-xs font-medium tracking-widest mb-6 uppercase text-neutral-400">Current Catalog Manifest</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-[11px] text-left border-collapse tracking-wider">
+                                <thead>
+                                    <tr class="border-b border-neutral-200 text-neutral-400 text-[9px] uppercase">
+                                        <th class="py-3 px-2">Image</th>
+                                        <th class="py-3 px-2">Label Identity</th>
+                                        <th class="py-3 px-2">Family Accord</th>
+                                        <th class="py-3 px-2 text-right">Value Mapping</th>
+                                        <th class="py-3 px-2 text-center">Data Operations</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="prod in products" :key="prod.id">
+                                        <tr class="border-b border-neutral-100 hover:bg-neutral-50/50 transition-colors">
+                                            <td class="py-3 px-2"><img :src="prod.images ? prod.images[0] : prod.image" class="w-8 h-8 object-contain"></td>
+                                            <td class="py-3 px-2 font-medium text-neutral-950" x-text="prod.name"></td>
+                                            <td class="py-3 px-2 text-neutral-500 uppercase text-[10px]" x-text="prod.family"></td>
+                                            <td class="py-3 px-2 text-right font-medium text-neutral-800" x-text="'₦' + prod.price.toLocaleString()"></td>
+                                            <td class="py-3 px-2 text-center">
+                                                <div class="flex items-center justify-center gap-3">
+                                                    <button @click="
+                                                        isEditing = true;
+                                                        editingProductId = prod.id;
+                                                        let f = document.getElementById('adminProductForm');
+                                                        f.elements.pname.value = prod.name;
+                                                        f.elements.pconc.value = prod.concentration;
+                                                        f.elements.pprice.value = prod.price;
+                                                        f.elements.pfamily.value = prod.family;
+                                                        f.elements.ptop.value = prod.top ? prod.top.join(', ') : '';
+                                                        f.elements.pheart.value = prod.heart ? prod.heart.join(', ') : '';
+                                                        f.elements.pbase.value = prod.base ? prod.base.join(', ') : '';
+                                                        f.elements.plong.value = prod.longevity || '';
+                                                        f.elements.pproj.value = prod.sillage || '';
+                                                        f.elements.pocc.value = prod.occasion || '';
+                                                        f.elements.pdesc.value = prod.description || '';
+                                                        window.scrollTo({ top: f.offsetTop - 100, behavior: 'smooth' });
+                                                    " class="text-neutral-900 hover:underline text-[10px] uppercase font-semibold cursor-pointer">Edit</button>
+                                                    <span class="text-neutral-200">|</span>
+                                                    <button @click="deleteProduct(prod.id)" class="text-red-700 hover:underline text-[10px] uppercase cursor-pointer">Delete</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </template>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-neutral-950 text-neutral-400 py-12 px-6 border-t border-white/5">
+        <div class="max-w-7xl mx-auto text-center text-[10px] tracking-widest uppercase font-light">
+            <p class="text-neutral-600">© SIYAJZH PLATFORM NODE INDEPENDENT ESCROW ARCHITECTURE.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
