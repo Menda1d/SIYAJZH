@@ -75,10 +75,10 @@
     isEditing: false,
     editingProductId: null,
 
-    // PERSISTENT PRODUCT DATABASE (Export Target)
+    // PERSISTENT PRODUCT DATABASE
     products: [],
 
-    // COMPREHENSIVE USER DATABASE (Export Target)
+    // COMPREHENSIVE USER DATABASE
     registeredUsers: [],
     
     init() {
@@ -88,9 +88,9 @@
             this.products = JSON.parse(storedProducts);
         } else {
             this.products = [
-                { id: 1, name: 'SILLAGE BLANC', concentration: 'Eau de Parfum (EDP)', price: 165000, family: 'Fresh', volume: '100ML', images: ['https://6a458d1f29e4cbc974f01623.imgix.net/sandbox/ASAD.jpg'], top: ['White Pepper', 'Aldehydes'], heart: ['Florentine Iris', 'Violet Leaf'], base: ['Silver Suede', 'White Musk'], sillage: 'Moderate sillage trail', longevity: '8-12h on skin', occasion: 'Daywear and structural events', description: 'A crisp, architectural vapor of aldehydes, cold iris, and silver suede mimicking raw silk on cold stone.', selectedQty: 1 },
-                { id: 2, name: 'CYBER OUD', concentration: 'Extrait de Parfum', price: 210000, family: 'Woody', volume: '100ML', images: ['https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600'], top: ['Pink Pepper', 'Saffron'], heart: ['Smoked Oud', 'Leather Accord'], base: ['Ambroxan', 'Patchouli'], sillage: 'Heavy signature trail', longevity: 'Eternal application', occasion: 'Night climate coordinates', description: 'A futuristic reinterpretation of traditional eastern notes subverted by sharp metallic sparks.', selectedQty: 1 },
-                { id: 3, name: 'AMBRE EPICEE', concentration: 'Eau de Parfum (EDP)', price: 150000, family: 'Amber / Oriental', volume: '100ML', images: ['https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&q=80&w=600'], top: ['Bergamot', 'Cardamom'], heart: ['Cinnamon Bark', 'Rose Absolute'], base: ['Golden Amber', 'Vanilla Bean'], sillage: 'Strong trajectory profile', longevity: '8-12h on skin', occasion: 'Cooler environments and evenings', description: 'A velvet, solar matrix composed of hot spices colliding against golden resinous warmth.', selectedQty: 1 }
+                { id: 1, name: 'SILLAGE BLANC', concentration: 'Eau de Parfum (EDP)', price: 165000, family: 'Fresh', volume: '100ML', images: ['https://6a458d1f29e4cbc974f01623.imgix.net/sandbox/ASAD.jpg', 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600'], top: ['White Pepper', 'Aldehydes'], heart: ['Florentine Iris', 'Violet Leaf'], base: ['Silver Suede', 'White Musk'], sillage: 'Moderate sillage trail', longevity: '8-12h on skin', occasion: 'Daywear and structural events', description: 'A crisp, architectural vapor of aldehydes, cold iris, and silver suede mimicking raw silk on cold stone.', selectedQty: 1 },
+                { id: 2, name: 'CYBER OUD', concentration: 'Extrait de Parfum', price: 210000, family: 'Woody', volume: '100ML', images: ['https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600', 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&q=80&w=600'], top: ['Pink Pepper', 'Saffron'], heart: ['Smoked Oud', 'Leather Accord'], base: ['Ambroxan', 'Patchouli'], sillage: 'Heavy signature trail', longevity: 'Eternal application', occasion: 'Night climate coordinates', description: 'A futuristic reinterpretation of traditional eastern notes subverted by sharp metallic sparks.', selectedQty: 1 },
+                { id: 3, name: 'AMBRE EPICEE', concentration: 'Eau de Parfum (EDP)', price: 150000, family: 'Amber / Oriental', volume: '100ML', images: ['https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&q=80&w=600', 'https://6a458d1f29e4cbc974f01623.imgix.net/sandbox/ASAD.jpg'], top: ['Bergamot', 'Cardamom'], heart: ['Cinnamon Bark', 'Rose Absolute'], base: ['Golden Amber', 'Vanilla Bean'], sillage: 'Strong trajectory profile', longevity: '8-12h on skin', occasion: 'Cooler environments and evenings', description: 'A velvet, solar matrix composed of hot spices colliding against golden resinous warmth.', selectedQty: 1 }
             ];
             localStorage.setItem('siyajzh_products', JSON.stringify(this.products));
         }
@@ -102,9 +102,8 @@
             const now = Date.now();
             const sevenDays = 7 * 24 * 60 * 60 * 1000;
             
-            // Clean out local un-exported users whose 7-day trial token has run out
             this.registeredUsers = parsedUsers.filter(u => {
-                if (u.isHardcoded) return true; // Never expire committed data layers
+                if (u.isHardcoded) return true;
                 return (now - u.createdAt) < sevenDays;
             });
             localStorage.setItem('siyajzh_users', JSON.stringify(this.registeredUsers));
@@ -146,16 +145,13 @@
         }
     },
 
-    // Method to download the newly saved code file directly to your desktop with user arrays safely compiled
     exportHtmlPage() {
-        // Explicitly set all currently present users to permanent code-layer status upon layout execution
         let processedUsers = this.registeredUsers.map(u => ({ ...u, isHardcoded: true }));
         this.registeredUsers = processedUsers;
         localStorage.setItem('siyajzh_users', JSON.stringify(processedUsers));
 
         let currentCode = document.documentElement.outerHTML;
         
-        // Match and overwrite the hardcoded arrays inside the script section cleanly
         const productRegex = /products:\s*\[[\s\S]*?\],/gm;
         const freshProductString = `products: ${JSON.stringify(this.products, null, 16).replace(/\n\s*\]/, '\n            ]')},`;
         
@@ -221,7 +217,6 @@
             return;
         }
 
-        // Build ephemeral profile container equipped with lifecycle monitoring variables
         let newUserPayload = {
             name: this.authForm.name.toUpperCase(),
             email: emailLower,
@@ -232,11 +227,9 @@
             createdAt: Date.now()
         };
 
-        // Push to working runtime cache
         this.registeredUsers.push(newUserPayload);
         localStorage.setItem('siyajzh_users', JSON.stringify(this.registeredUsers));
 
-        // Create persistent session state container configured to log them back in for up to 7 days
         localStorage.setItem('siyajzh_active_session', JSON.stringify({
             user: newUserPayload,
             loginTime: Date.now()
@@ -246,7 +239,6 @@
         this.accountMode = 'authenticated';
         this.triggerToast('Account profile mapped successfully.');
         
-        // Reset inputs
         this.authForm = { name: '', email: '', password: '', phone: '', address: '' };
     },
     handleLogin() {
@@ -377,7 +369,9 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
             
             <nav class="hidden md:flex space-x-6 text-[10px] uppercase tracking-[0.2em] font-light pl-4">
                 <button @click="navigateTo('shop')" class="hover:text-neutral-500 transition-colors cursor-pointer">Shop</button>
+                <button @click="navigateTo('journal')" class="hover:text-neutral-500 transition-colors cursor-pointer">Journal</button>
                 <button @click="navigateTo('about')" class="hover:text-neutral-500 transition-colors cursor-pointer">About</button>
+                <button @click="navigateTo('contact')" class="hover:text-neutral-500 transition-colors cursor-pointer">Contact</button>
                 <button @click="navigateTo('admin')" class="text-neutral-400 hover:text-neutral-900 transition-colors cursor-pointer border-l pl-4 border-neutral-200">Portal</button>
             </nav>
 
@@ -406,14 +400,51 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
         <!-- TAB: HOMEPAGE -->
         <template x-if="currentTab === 'home'">
             <div>
-                <section class="relative h-screen flex items-center justify-center bg-neutral-900 overflow-hidden">
-                    <div class="absolute inset-0 bg-cover bg-center opacity-65 mix-blend-multiply scale-105" style="background-image: url('https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=1920');"></div>
-                    <div class="relative text-center text-white px-4 max-w-3xl z-10">
+                <!-- DYNAMIC HERO CAROUSEL: SLIDES AUTOMATICALLY EVERY 5 SECONDS -->
+                <section class="relative h-screen flex items-center justify-center bg-neutral-900 overflow-hidden"
+                         x-data="{ 
+                            activeHeroIndex: 0,
+                            hovered: false,
+                            init() {
+                                setInterval(() => {
+                                    if(!this.hovered && currentTab === 'home') {
+                                        this.activeHeroIndex = (this.activeHeroIndex + 1) % products.length;
+                                    }
+                                }, 5000);
+                            }
+                         }"
+                         @mouseenter="hovered = true"
+                         @mouseleave="hovered = false">
+                    
+                    <template x-for="(product, idx) in products" :key="product.id">
+                        <div x-show="activeHeroIndex === idx"
+                             x-transition:enter="transition ease-out duration-1000"
+                             x-transition:enter-start="opacity-0 scale-105"
+                             x-transition:enter-end="opacity-65 scale-100"
+                             x-transition:leave="transition ease-in duration-1000"
+                             x-transition:leave-start="opacity-65"
+                             x-transition:leave-end="opacity-0"
+                             class="absolute inset-0 bg-cover bg-center opacity-65 mix-blend-multiply cursor-pointer"
+                             :style="'background-image: url(' + (product.images ? product.images[0] : product.image) + ');'"
+                             @click="selectedProduct = product; navigateTo('product')">
+                        </div>
+                    </template>
+
+                    <div class="relative text-center text-white px-4 max-w-3xl z-10 pointer-events-none">
                         <span class="text-[10px] uppercase tracking-[0.4em] text-neutral-300 mb-4 block">The Permanent Architecture</span>
                         <h2 class="text-4xl md:text-6xl font-serif font-light tracking-wide mb-8 leading-tight">Invisible garments woven from raw memory.</h2>
-                        <div class="flex justify-center gap-4">
+                        <div class="flex justify-center gap-4 pointer-events-auto">
                             <button @click="navigateTo('shop')" class="px-8 py-3 bg-white text-neutral-950 text-[10px] tracking-widest uppercase hover:bg-neutral-100 transition-all cursor-pointer">Shop Now</button>
                         </div>
+                    </div>
+                    
+                    <!-- Carousel Indicator Dots -->
+                    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                        <template x-for="(prod, idx) in products" :key="prod.id">
+                            <button @click="activeHeroIndex = idx" 
+                                    class="h-1.5 rounded-full transition-all duration-300"
+                                    :class="activeHeroIndex === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/40'"></button>
+                        </template>
                     </div>
                 </section>
 
@@ -485,6 +516,10 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                                             Add to Cart
                                         </button>
                                     </div>
+                                    <button x-show="lastAddedId === product.id" @click="navigateTo('cart')" 
+                                            class="w-full py-1.5 border border-neutral-950 bg-transparent text-neutral-950 text-[9px] uppercase tracking-widest font-medium hover:bg-neutral-50 transition-colors cursor-pointer text-center">
+                                        Proceed to Cart &rarr;
+                                    </button>
                                 </div>
                             </div>
                         </template>
@@ -496,26 +531,120 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
         <!-- TAB: DETAILED PRODUCT MATRIX -->
         <template x-if="currentTab === 'product' && selectedProduct">
             <section class="max-w-7xl mx-auto px-6 py-32 grid grid-cols-1 lg:grid-cols-2 gap-16"
-                     x-data="{ activeIndex: 0 }">
+                     x-data="{ 
+                        activeIndex: 0, 
+                        hovered: false,
+                        lightboxOpen: false,
+                        lightboxZoom: false,
+                        init() {
+                            // AUTOMATICALLY SLIDES EVERY 3 SECONDS ON PRODUCT INFO
+                            setInterval(() => {
+                                if (!this.hovered && !this.lightboxOpen) {
+                                    let total = this.selectedProduct.images ? this.selectedProduct.images.length : 1;
+                                    this.activeIndex = (this.activeIndex + 1) % total;
+                                }
+                            }, 3000);
+                        },
+                        nextImage() {
+                            let total = this.selectedProduct.images ? this.selectedProduct.images.length : 1;
+                            this.activeIndex = (this.activeIndex + 1) % total;
+                        },
+                        prevImage() {
+                            let total = this.selectedProduct.images ? this.selectedProduct.images.length : 1;
+                            this.activeIndex = (this.activeIndex - 1 + total) % total;
+                        }
+                     }">
                 
-                <div class="relative bg-neutral-50 aspect-[4/5] border border-neutral-100 flex flex-col justify-between p-6">
-                    <div class="flex-grow flex items-center justify-center overflow-hidden">
-                        <img :src="selectedProduct.images ? selectedProduct.images[activeIndex] : selectedProduct.image" class="max-h-full object-contain mix-blend-multiply">
+                <!-- MULTI-IMAGE HOVER-PAUSE TIMELINE SLIDER -->
+                <div class="relative bg-neutral-50 aspect-[4/5] border border-neutral-100 flex flex-col justify-between p-6 group/slider"
+                     @mouseenter="hovered = true" 
+                     @mouseleave="hovered = false">
+                    
+                    <!-- CLICKING THE IMAGE ENTERS FULL SCREEN MODE -->
+                    <div class="flex-grow flex items-center justify-center overflow-hidden cursor-zoom-in" @click="lightboxOpen = true">
+                        <img :src="selectedProduct.images ? selectedProduct.images[activeIndex] : selectedProduct.image" 
+                             class="max-h-full object-contain mix-blend-multiply transition-all duration-500 transform group-hover/slider:scale-102">
+                    </div>
+
+                    <div class="flex justify-center gap-1.5 mt-4" x-show="selectedProduct.images && selectedProduct.images.length > 1">
+                        <template x-for="(img, idx) in selectedProduct.images" :key="idx">
+                            <button @click="activeIndex = idx" 
+                                    class="h-1 transition-all duration-300 rounded-full"
+                                    :class="activeIndex === idx ? 'w-6 bg-neutral-950' : 'w-1.5 bg-neutral-200'"></button>
+                        </template>
+                    </div>
+
+                    <div class="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none opacity-0 group-hover/slider:opacity-100 transition-opacity duration-300" x-show="selectedProduct.images && selectedProduct.images.length > 1">
+                        <button @click.stop="prevImage()" class="pointer-events-auto bg-white/80 hover:bg-white text-neutral-950 p-2 rounded-full shadow-md transition-all cursor-pointer">⟵</button>
+                        <button @click.stop="nextImage()" class="pointer-events-auto bg-white/80 hover:bg-white text-neutral-950 p-2 rounded-full shadow-md transition-all cursor-pointer">⟶</button>
                     </div>
                 </div>
 
-                <div class="flex flex-col justify-center">
+                <!-- FULLSCREEN INTERACTIVE LIGHTBOX WINDOW OVERLAY -->
+                <div class="fixed inset-0 bg-white z-[150] flex flex-col items-center justify-center p-4 select-none"
+                     x-show="lightboxOpen"
+                     style="display: none;"
+                     x-transition
+                     @keydown.window.escape="lightboxOpen = false; lightboxZoom = false"
+                     @keydown.window.left="prevImage()"
+                     @keydown.window.right="nextImage()">
+                    
+                    <div class="absolute top-6 right-6 flex items-center gap-6 z-[160]">
+                        <button @click="lightboxZoom = !lightboxZoom" class="text-[10px] tracking-widest text-neutral-500 hover:text-neutral-950 uppercase font-medium cursor-pointer">
+                            <span x-text="lightboxZoom ? 'Actual Size' : 'Zoom Matrix'"></span>
+                        </button>
+                        <button @click="lightboxOpen = false; lightboxZoom = false" class="text-lg font-light text-neutral-400 hover:text-neutral-950 duration-300 transition-all cursor-pointer p-2">✕</button>
+                    </div>
+
+                    <button @click="prevImage()" x-show="selectedProduct.images && selectedProduct.images.length > 1"
+                            class="absolute left-6 top-1/2 -translate-y-1/2 bg-neutral-50 hover:bg-neutral-900 hover:text-white border border-neutral-200 text-neutral-950 w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer text-sm font-light z-40 shadow-sm">&larr;</button>
+
+                    <div class="w-full h-full max-w-5xl max-h-[80vh] flex items-center justify-center overflow-auto cursor-pointer"
+                         @click="lightboxZoom = !lightboxZoom">
+                        <img :src="selectedProduct.images ? selectedProduct.images[activeIndex] : selectedProduct.image"
+                             class="mix-blend-multiply object-contain transition-all duration-300 max-h-full max-w-full"
+                             :class="lightboxZoom ? 'scale-150 cursor-zoom-out' : 'scale-100 cursor-zoom-in'"
+                             @click.stop="lightboxZoom = !lightboxZoom">
+                    </div>
+
+                    <button @click="nextImage()" x-show="selectedProduct.images && selectedProduct.images.length > 1"
+                            class="absolute right-6 top-1/2 -translate-y-1/2 bg-neutral-50 hover:bg-neutral-900 hover:text-white border border-neutral-200 text-neutral-950 w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer text-sm font-light z-40 shadow-sm">&rarr;</button>
+
+                    <div class="absolute bottom-6 text-[10px] tracking-[0.3em] font-light text-neutral-400 uppercase">
+                        IMAGE FRAME <span x-text="activeIndex + 1"></span> OF <span x-text="selectedProduct.images ? selectedProduct.images.length : 1"></span>
+                    </div>
+                </div>
+
+                <!-- DESCRIPTION METADATA MATRIX -->
+                <div class="flex flex-col justify-center" @click.stop>
                     <span class="text-[10px] uppercase tracking-widest text-neutral-400 mb-1" x-text="selectedProduct.concentration + ' • ' + (selectedProduct.volume || '100ML')"></span>
                     <h2 class="text-3xl font-serif font-light mb-2 tracking-wide" x-text="selectedProduct.name"></h2>
                     <p class="text-lg font-light text-neutral-700 mb-4" x-text="'₦' + selectedProduct.price.toLocaleString() + ' NGN'"></p>
+                    
+                    <div class="text-[10px] tracking-widest font-medium text-neutral-400 uppercase mb-4" x-text="'Scent Profile: ' + (selectedProduct.family || 'Minimal Design')"></div>
                     <p class="text-xs text-neutral-500 leading-relaxed font-light mb-6" x-text="selectedProduct.description"></p>
+
+                    <div class="border-t border-b border-neutral-200 py-6 mb-6 space-y-4 text-xs">
+                        <div><span class="text-[9px] uppercase tracking-widest text-neutral-400 block mb-0.5">Top Formulation</span><span class="font-light tracking-wide" x-text="selectedProduct.top ? selectedProduct.top.join(' / ') : ''"></span></div>
+                        <div><span class="text-[9px] uppercase tracking-widest text-neutral-400 block mb-0.5">Heart Core</span><span class="font-light tracking-wide" x-text="selectedProduct.heart ? selectedProduct.heart.join(' / ') : ''"></span></div>
+                        <div><span class="text-[9px] uppercase tracking-widest text-neutral-400 block mb-0.5">Base Anchorage</span><span class="font-light tracking-wide" x-text="selectedProduct.base ? selectedProduct.base.join(' / ') : ''"></span></div>
+                    </div>
 
                     <div class="flex flex-col gap-3">
                         <div class="flex items-center gap-4">
-                            <button @click="addToCart(selectedProduct, 1); triggerToast('Formulation added to system inventory.');" class="flex-grow py-4 bg-neutral-950 text-white text-[10px] uppercase tracking-widest hover:bg-neutral-800 transition-colors cursor-pointer">
+                            <div class="flex items-center border border-neutral-200 text-xs bg-white">
+                                <button @click="if(selectedProduct.selectedQty > 1) selectedProduct.selectedQty--" class="px-3 py-2 hover:bg-neutral-50 cursor-pointer text-neutral-500">—</button>
+                                <span class="px-4 font-medium min-w-[30px] text-center text-xs" x-text="selectedProduct.selectedQty"></span>
+                                <button @click="selectedProduct.selectedQty++" class="px-3 py-2 hover:bg-neutral-50 cursor-pointer text-neutral-500">+</button>
+                            </div>
+                            <button @click="addToCart(selectedProduct, selectedProduct.selectedQty); triggerToast('Formulation added to system inventory.');" class="flex-grow py-4 bg-neutral-950 text-white text-[10px] uppercase tracking-widest hover:bg-neutral-800 transition-colors cursor-pointer">
                                 Add to Cart
                             </button>
                         </div>
+                        <button x-show="lastAddedId === selectedProduct.id" @click="navigateTo('cart')" 
+                                class="w-full py-3.5 border border-neutral-950 bg-transparent text-neutral-950 text-[10px] uppercase tracking-widest font-medium hover:bg-neutral-50 transition-colors cursor-pointer text-center">
+                            Proceed to Cart &rarr;
+                        </button>
                     </div>
                 </div>
             </section>
@@ -525,7 +654,13 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
         <template x-if="currentTab === 'cart'">
             <section class="max-w-4xl mx-auto px-6 py-32">
                 <div class="flex flex-row justify-between items-baseline mb-8 border-b border-neutral-100 pb-4">
-                    <h2 class="text-2xl font-serif font-light tracking-wide">Selected Inventory</h2>
+                    <h2 class="text-2xl font-serif font-light tracking-wide uppercase">Selected Items</h2>
+                    <template x-if="cart.length > 0">
+                        <button @click="cart = []; lastAddedId = null; triggerToast('Cart inventory cleared.')" 
+                                class="text-[9px] font-medium uppercase tracking-[0.2em] border border-neutral-200 hover:border-neutral-900 bg-transparent px-3 py-1.5 transition-colors cursor-pointer text-neutral-500 hover:text-neutral-950">
+                            Clear Cart
+                        </button>
+                    </template>
                 </div>
                 
                 <template x-if="cart.length === 0">
@@ -537,13 +672,18 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                         <template x-for="item in cart" :key="item.id">
                             <div class="flex items-center justify-between border-b border-neutral-100 pb-4 text-xs">
                                 <div class="flex items-center gap-4">
+                                    <img :src="item.images ? item.images[0] : item.image" class="w-16 h-16 bg-neutral-50 object-contain p-2 mix-blend-multiply">
                                     <div>
                                         <h4 class="font-medium uppercase tracking-wider" x-text="item.name"></h4>
-                                        <p class="text-neutral-400 text-[10px]" x-text="'₦' + item.price.toLocaleString()"></p>
+                                        <p class="text-neutral-400 text-[10px]" x-text="'₦' + item.price.toLocaleString() + ' • ' + item.concentration + ' (' + (item.volume || '100ML') + ')'"></p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-6">
-                                    <span class="px-3" x-text="'Qty: ' + item.quantity"></span>
+                                    <div class="flex items-center border border-neutral-200">
+                                        <button @click="if(item.quantity > 1) item.quantity--; else cart = cart.filter(c => c.id !== item.id)" class="px-2 py-1 cursor-pointer">—</button>
+                                        <span class="px-3" x-text="item.quantity"></span>
+                                        <button @click="item.quantity++" class="px-2 py-1 cursor-pointer">+</button>
+                                    </div>
                                     <button @click="cart = cart.filter(c => c.id !== item.id)" class="text-neutral-400 hover:text-neutral-900 cursor-pointer">Remove</button>
                                 </div>
                             </div>
@@ -554,7 +694,7 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                                 <span>Final Order Capital</span>
                                 <span x-text="'₦' + cartTotal.toLocaleString()"></span>
                             </div>
-                            <button @click="navigateTo('checkout')" class="w-full mt-4 bg-neutral-950 text-white text-center py-3 text-[10px] uppercase tracking-widest font-medium hover:bg-neutral-800 cursor-pointer">
+                            <button @click="navigateTo('checkout')" class="w-full mt-4 bg-neutral-950 text-white text-center py-3 text-[10px] uppercase tracking-widest block font-medium hover:bg-neutral-800 cursor-pointer">
                                 Proceed to Checkout
                             </button>
                         </div>
@@ -563,28 +703,117 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
             </section>
         </template>
 
+        <!-- TAB: JOURNAL -->
+        <template x-if="currentTab === 'journal'">
+            <section class="max-w-4xl mx-auto px-6 py-32 space-y-12">
+                <h2 class="text-2xl font-serif font-light tracking-wide border-b border-neutral-100 pb-4">Olfactive Chronicles</h2>
+                <div class="space-y-8">
+                    <article class="border-b border-neutral-100 pb-6 text-xs uppercase tracking-widest">
+                        <span class="text-neutral-400 text-[9px]">October 2026</span>
+                        <h3 class="text-base font-serif tracking-normal font-light normal-case text-neutral-950 my-2">The Architecture of Spatial Vapor</h3>
+                        <p class="text-neutral-500 tracking-wider lowercase text-justify leading-relaxed">Analyzing the interaction between cold stone structures and memory alignment arrays.</p>
+                    </article>
+                </div>
+            </section>
+        </template>
+
+        <!-- TAB: CONTACT -->
+        <template x-if="currentTab === 'contact'">
+            <section class="max-w-md mx-auto px-6 py-32 text-xs uppercase tracking-widest space-y-6">
+                <h2 class="text-xl font-serif font-light tracking-wide text-center uppercase mb-4">Direct Coordinates</h2>
+                <div class="space-y-4 border border-neutral-200 p-6 bg-white">
+                    <div>
+                        <span class="text-neutral-400 text-[9px] block mb-0.5">Physical Matrix Node</span>
+                        <p class="text-neutral-900 font-medium tracking-wide">Lagos, Nigeria</p>
+                    </div>
+                    <div class="border-t pt-4">
+                        <span class="text-neutral-400 text-[9px] block mb-0.5">Digital Transmission Routing</span>
+                        <p class="text-neutral-900 font-medium tracking-wide lowercase normal-case">concierge@siyajzh.com</p>
+                    </div>
+                </div>
+            </section>
+        </template>
+
         <!-- TAB: MULTI-STEP CHECKOUT ESCROW -->
         <template x-if="currentTab === 'checkout'">
             <section class="max-w-2xl mx-auto px-6 py-32" @click.stop>
                 <h2 class="text-xl font-serif tracking-wide font-light mb-8 text-center uppercase">Secure Checkout Process</h2>
                 
+                <div class="flex justify-between text-[10px] uppercase tracking-widest mb-12 border-b border-neutral-100 pb-4">
+                    <button @click="checkoutStep = 1" class="cursor-pointer pb-2 transition-all tracking-[0.15em]" :class="checkoutStep === 1 ? 'text-neutral-900 font-medium border-b-2 border-neutral-950' : 'text-neutral-400 hover:text-neutral-600'">
+                        Customer Information
+                    </button>
+                    <button @click="if(checkoutForm.name) checkoutStep = 2" class="cursor-pointer pb-2 transition-all tracking-[0.15em]" :class="checkoutStep === 2 ? 'text-neutral-900 font-medium border-b-2 border-neutral-950' : 'text-neutral-400 hover:text-neutral-600'" :disabled="!checkoutForm.name">
+                        Item Order
+                    </button>
+                    <button @click="if(checkoutForm.name && cart.length > 0) checkoutStep = 3" class="cursor-pointer pb-2 transition-all tracking-[0.15em]" :class="checkoutStep === 3 ? 'text-neutral-900 font-medium border-b-2 border-neutral-950' : 'text-neutral-400 hover:text-neutral-600'" :disabled="!checkoutForm.name || cart.length === 0">
+                        Confirmation
+                    </button>
+                </div>
+
                 <div x-show="checkoutStep === 1" class="space-y-4">
-                    <input type="text" x-model="checkoutForm.name" placeholder="RECIPIENT FULL NAME" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
-                    <input type="email" x-model="checkoutForm.email" placeholder="SECURE EMAIL CONTACT" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
-                    <input type="text" x-model="checkoutForm.phone" placeholder="PHONE NUMBER" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
-                    <input type="text" x-model="checkoutForm.address" placeholder="DESTINATION LOGISTICS ADDRESS" class="w-full p-3 text-xs bg-white border border-neutral-200 uppercase tracking-widest">
+                    <input type="text" x-model="checkoutForm.name" placeholder="RECIPIENT FULL NAME" class="w-full p-3 text-xs bg-white border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
+                    <input type="email" x-model="checkoutForm.email" placeholder="SECURE EMAIL CONTACT" class="w-full p-3 text-xs bg-white border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
+                    <input type="text" x-model="checkoutForm.phone" placeholder="PHONE NUMBER / WHATSAPP LINK" class="w-full p-3 text-xs bg-white border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
+                    <input type="text" x-model="checkoutForm.address" placeholder="DESTINATION LOGISTICS ADDRESS" class="w-full p-3 text-xs bg-white border border-neutral-200 focus:outline-none focus:border-neutral-900 uppercase tracking-widest">
                     <button @click="checkoutStep = 2" class="w-full py-3 bg-neutral-900 text-white text-[10px] uppercase tracking-widest font-medium cursor-pointer">NEXT</button>
                 </div>
 
                 <div x-show="checkoutStep === 2" class="space-y-6">
+                    <div class="bg-neutral-50 border border-neutral-100 p-4 space-y-3">
+                        <template x-for="item in cart" :key="item.id">
+                            <div class="flex justify-between items-center text-xs tracking-wide">
+                                <span class="font-light text-neutral-600" x-text="item.name + ' (' + item.concentration + ' - ' + (item.volume || '100ML') + ') x' + item.quantity"></span>
+                                <span class="font-medium text-neutral-900" x-text="'₦' + (item.price * item.quantity).toLocaleString()"></span>
+                            </div>
+                        </template>
+                    </div>
                     <div class="p-4 bg-neutral-900 text-white flex justify-between items-center text-xs uppercase tracking-widest">
                         <span>Total Payable Capital:</span>
-                        <span class="text-base font-bold text-white" x-text="'₦' + cartTotal.toLocaleString() + ' NGN'"></span>
+                        <span class="text-base font-bold text-white tracking-wide" x-text="'₦' + cartTotal.toLocaleString() + ' NGN'"></span>
                     </div>
-                    <button @click="sendWhatsAppInvoice()" class="w-full py-4 bg-emerald-800 text-white text-[10px] uppercase tracking-widest font-medium hover:bg-emerald-900 cursor-pointer text-center block">
-                        Confirm to WhatsApp Invoice
+                    <button @click="checkoutStep = 3" class="w-full py-3 bg-neutral-950 text-white text-[10px] uppercase tracking-widest font-medium cursor-pointer">NEXT</button>
+                </div>
+
+                <div x-show="checkoutStep === 3" class="space-y-6">
+                    <div class="bg-white border-2 border-neutral-900 p-6 space-y-6 text-xs uppercase tracking-wider shadow-sm">
+                        <div class="text-center border-b pb-4">
+                            <h3 class="font-serif text-lg tracking-widest">SIYAJZH MANIFEST INVOICE</h3>
+                        </div>
+                        <div>
+                            <h4 class="text-[9px] text-neutral-400 font-bold mb-2">Recipient Parameters</h4>
+                            <p class="font-light">Name: <span class="font-medium text-neutral-900" x-text="checkoutForm.name"></span></p>
+                            <p class="font-light">Email: <span class="font-medium text-neutral-900" x-text="checkoutForm.email"></span></p>
+                            <p class="font-light">Address: <span class="font-medium text-neutral-900" x-text="checkoutForm.address"></span></p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <h4 class="text-[9px] text-neutral-400 font-bold mb-2">Selected Extractions</h4>
+                            <template x-for="item in cart" :key="item.id">
+                                <div class="flex justify-between text-[11px] mb-1">
+                                    <span x-text="item.name + ' (' + (item.volume || '100ML') + ') x' + item.quantity"></span>
+                                    <span x-text="'₦' + (item.price * item.quantity).toLocaleString()"></span>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="border-t pt-4 flex justify-between font-bold text-sm text-neutral-950">
+                            <span>Aggregate Sum</span>
+                            <span x-text="'₦' + cartTotal.toLocaleString() + ' NGN'"></span>
+                        </div>
+                    </div>
+                    <button @click="sendWhatsAppInvoice()" class="w-full py-4 bg-emerald-800 text-white text-[10px] uppercase tracking-widest font-medium hover:bg-emerald-900 transition-colors cursor-pointer text-center block">
+                        Confirm to Payment
                     </button>
                 </div>
+            </section>
+        </template>
+
+        <!-- TAB: ABOUT PORTAL -->
+        <template x-if="currentTab === 'about'">
+            <section class="max-w-3xl mx-auto px-6 py-32 text-center space-y-8">
+                <h2 class="text-3xl font-serif font-light tracking-wide uppercase">The Formulation Identity</h2>
+                <p class="text-xs leading-relaxed text-neutral-600 uppercase tracking-widest text-justify">
+                    Founded under absolute minimalism, SIYAJZH reinterprets tactile spatial layouts via liquid chemical extractions. Rejecting standard synthetic aromatic compounds, we gather pure extracts sourced from natural matrices across extreme terrain borders.
+                </p>
             </section>
         </template>
 
@@ -618,22 +847,34 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                         <input type="email" x-model="loginForm.email" placeholder="EMAIL ADDRESS" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
                         <input type="password" x-model="loginForm.password" placeholder="PASSWORD" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs">
                     </div>
-                    <button @click="handleLogin()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Access Profile Node</button>
-                    <p class="text-center text-[9px] text-neutral-400">Need an account? <span @click="accountMode = 'signup'" class="text-neutral-900 cursor-pointer underline">Register</span></p>
+                    <button @click="handleLogin()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Access Portal</button>
+                    <p class="text-center text-[9px] text-neutral-400">Need an account? <span @click="accountMode = 'signup'" class="text-neutral-900 cursor-pointer underline">Sign Up</span></p>
                 </div>
 
-                <!-- LOGGED IN SUITE -->
+                <!-- AUTHENTICATED STATE VIEW -->
                 <div x-show="accountMode === 'authenticated'" class="space-y-6">
                     <div class="border border-neutral-200 p-6 bg-white space-y-4">
-                        <h3 class="font-serif text-sm border-b pb-2 tracking-widest">Active Client Matrix</h3>
-                        <div class="space-y-2 text-[10px] text-left">
-                            <p class="text-neutral-500">NAME: <span class="text-neutral-900 font-medium" x-text="registeredUser ? registeredUser.name : ''"></span></p>
-                            <p class="text-neutral-500">EMAIL: <span class="text-neutral-900 font-medium" x-text="registeredUser ? registeredUser.email : ''"></span></p>
-                            <p class="text-neutral-500">SHIPPING VECTOR: <span class="text-neutral-900 font-medium" x-text="registeredUser ? registeredUser.address : ''"></span></p>
-                            <p class="text-neutral-500 mt-4 text-[9px] border-t pt-2 text-neutral-400 normal-case italic" x-text="registeredUser && registeredUser.isHardcoded ? '✓ Identity node permanently compiled into core system network layer.' : '⚠ Ephemeral security token. System admin verification pending sync.'"></p>
+                        <div class="flex justify-between border-b border-neutral-100 pb-2 text-[10px]">
+                            <span class="text-neutral-400">Profile Identifier</span>
+                            <span class="text-neutral-900 font-medium uppercase" x-text="registeredUser ? registeredUser.name : ''"></span>
+                        </div>
+                        <div class="flex justify-between border-b border-neutral-100 pb-2 text-[10px]">
+                            <span class="text-neutral-400">Secure Email</span>
+                            <span class="text-neutral-900 font-medium lowercase normal-case tracking-normal" x-text="registeredUser ? registeredUser.email : ''"></span>
+                        </div>
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-neutral-400">Logistics Node</span>
+                            <span class="text-neutral-900 font-medium uppercase" x-text="registeredUser ? registeredUser.address : ''"></span>
                         </div>
                     </div>
-                    <button @click="handleLogout()" class="w-full py-2 border border-neutral-300 text-neutral-600 text-[9px] tracking-widest uppercase hover:bg-neutral-50 cursor-pointer">Disconnect Session Profile</button>
+                    <div class="flex flex-col gap-2">
+                        <button @click="exportHtmlPage()" class="w-full py-3 bg-neutral-900 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">
+                            Export System Code Base
+                        </button>
+                        <button @click="handleLogout()" class="w-full py-2 border border-neutral-300 text-neutral-600 text-[9px] tracking-widest uppercase hover:bg-neutral-50 cursor-pointer">
+                            Disconnect Matrix Profile
+                        </button>
+                    </div>
                 </div>
 
             </section>
@@ -648,22 +889,21 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                 handleAdminLogin() {
                     if (this.adminEmail.toLowerCase() === 'admin@siyajzh.com' && this.adminPassword === '123456') {
                         this.adminAuthenticated = true;
-                        triggerToast('Super User Node Access Authorized.');
+                        triggerToast('Admin Access Authorized.');
                     } else {
-                        triggerToast('Invalid system parameters mapped.');
+                        triggerToast('Invalid Login Credentials.');
                     }
                 }
             }">
-                <!-- Login Guard Node -->
                 <div x-show="!adminAuthenticated" class="max-w-md mx-auto space-y-6 text-xs uppercase tracking-widest py-12">
                     <div class="text-center">
-                        <h2 class="text-xl font-serif font-light tracking-wide mb-1">Admin Core Infrastructure</h2>
+                        <h2 class="text-xl font-serif font-light tracking-wide mb-1">Admin Panel</h2>
                     </div>
                     <div class="space-y-3">
-                        <input type="email" x-model="adminEmail" placeholder="ADMIN EMAIL ROUTE" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
-                        <input type="password" x-model="adminPassword" placeholder="ADMIN PRIVACY KEY" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs">
+                        <input type="email" x-model="adminEmail" placeholder="EMAIL" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs uppercase">
+                        <input type="password" x-model="adminPassword" placeholder="PASSWORD" class="w-full p-3 bg-white border border-neutral-200 tracking-widest text-xs">
                     </div>
-                    <button @click="handleAdminLogin()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Access Node Framework</button>
+                    <button @click="handleAdminLogin()" class="w-full py-3 bg-neutral-950 text-white text-[10px] tracking-widest uppercase hover:bg-neutral-800 cursor-pointer">Login</button>
                 </div>
 
                 <!-- Live Management Matrix Suite -->
@@ -746,9 +986,17 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                             };
 
                             if (imageFiles.length > 0) {
-                                let reader = new FileReader();
-                                reader.onload = (e) => { compilePayload([e.target.result]); };
-                                reader.readAsDataURL(imageFiles[0]);
+                                let loadedUrls = [];
+                                Array.from(imageFiles).forEach((file, index) => {
+                                    let reader = new FileReader();
+                                    reader.onload = (e) => {
+                                        loadedUrls.push(e.target.result);
+                                        if(loadedUrls.length === imageFiles.length) {
+                                            compilePayload(loadedUrls);
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                });
                             } else {
                                 compilePayload([]);
                             }
@@ -784,8 +1032,8 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
                                     <input type="text" name="pfamily" placeholder="Woody" required class="border border-neutral-200 p-3 text-[10px] bg-neutral-50/50 uppercase">
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Olfactive Imagery Matrix</label>
-                                    <input type="file" name="pimages" accept="image/*" class="border border-neutral-200 p-2 text-[10px] bg-white cursor-pointer">
+                                   <label class="text-[9px] tracking-widest text-neutral-400 uppercase">Olfactive Imagery Matrix (Upload Multiple Photos)</label>
+                                    <input type="file" name="pimages" accept="image/*" multiple class="border border-neutral-200 p-2.5 text-[10px] tracking-widest focus:outline-none focus:border-neutral-900 bg-white cursor-pointer file:mr-4 file:py-1 file:px-3 file:border-0 file:text-[9px] file:tracking-widest file:bg-neutral-950 file:text-white">
                                 </div>
                             </div>
 
@@ -803,7 +1051,7 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
 
                             <textarea name="pdesc" placeholder="Provide description..." rows="3" class="w-full border border-neutral-200 p-3 text-[10px] bg-neutral-50/50 uppercase resize-none"></textarea>
 
-                            <button type="submit" class="w-full py-4 bg-neutral-950 text-white text-[10px] uppercase tracking-widest font-medium hover:bg-neutral-800 transition-colors cursor-pointer text-center" x-text="isEditing ? 'Apply Structural Matrix Updates' : 'Compile Framework Payload Into Main Catalog Vector'"></button>
+                            <button type="submit" class="w-full py-4 bg-neutral-950 text-white text-[10px] uppercase tracking-widest font-medium hover:bg-neutral-800 transition-colors cursor-pointer text-center" x-text="isEditing ? 'Apply Structural Matrix Updates' : 'Create Product'"></button>
                         </form>
                     </div>
 
@@ -867,7 +1115,7 @@ class="antialiased selection:bg-neutral-200 min-h-screen flex flex-col justify-b
     <!-- FOOTER -->
     <footer class="bg-neutral-950 text-neutral-400 py-12 px-6 border-t border-white/5">
         <div class="max-w-7xl mx-auto text-center text-[10px] tracking-widest uppercase font-light">
-            <p class="text-neutral-600">© SIYAJZH PLATFORM NODE INDEPENDENT ESCROW ARCHITECTURE.</p>
+            <p class="text-neutral-600">© SIYAJZH ADMIN PANEL 2026.</p>
         </div>
     </footer>
 
